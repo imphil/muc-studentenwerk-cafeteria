@@ -1,0 +1,16 @@
+[Desktop Entry]
+Name=Cafeteria Menu Plasmoid
+Comment=Show today's menu of your cafeteria
+Type=Service
+ServiceTypes=Plasma/Applet
+ 
+X-KDE-Library=plasma_applet_cafeteria
+X-KDE-PluginInfo-Name=cafeteria
+X-KDE-PluginInfo-Author=Philipp Wagner
+X-KDE-PluginInfo-Email=mail@philipp-wagner.com
+X-KDE-PluginInfo-Version=0.1
+X-KDE-PluginInfo-Website=http://philipp.wagner.name
+X-KDE-PluginInfo-Category=Online Services
+X-KDE-PluginInfo-Depends=
+X-KDE-PluginInfo-License=GPL
+X-KDE-PluginInfo-EnabledByDefault=true

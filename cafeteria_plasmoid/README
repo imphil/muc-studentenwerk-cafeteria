@@ -1,0 +1,20 @@
+=== CAFETERIA PLASMOID ===
+
+== BUILD REQUIREMENTS ==
+Packages for SUSE:
+* libplasma1
+* kdebase4-workspace-devel
+
+== BUILDING ==
+$ mkdir build
+$ cd build
+$ cmake -DPLUGIN_INSTALL_DIR=/usr/lib64/kde4/ -DSERVICES_INSTALL_DIR=/usr/share/kde4/services/ ..
+$ make
+$ sudo make install
+$ sudo kbuildsycoca4
+
+to test it, you can run:
+$ plasmoidviewer cafeteria
+
+to use it, log out and in again and you should be able to see the plasmoid in
+the list of available plasmoids.

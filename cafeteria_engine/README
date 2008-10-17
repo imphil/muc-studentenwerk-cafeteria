@@ -1,0 +1,35 @@
+=== CAFETERIA DATA ENGINE ===
+
+== BUILD REQUIREMENTS ==
+Packages for SUSE:
+* libplasma1
+* kdebase4-workspace-devel
+
+== BUILDING ==
+$ mkdir build
+$ cd build
+$ cmake -DPLUGIN_INSTALL_DIR=/usr/lib64/kde4/ -DSERVICES_INSTALL_DIR=/usr/share/kde4/services/ ..
+$ make
+$ sudo make install
+$ sudo kbuildsycoca4
+
+== TEST IT ==
+run
+$ plasmaengineexplorer
+
+then select "cafeteria" from the dropdown list of available engines. The source
+"location" should be populated with some data shortly (if you have a network
+connection). To get a menu for a location, type menu:421 into the source input
+field and wait for the result to come up (you should get today's menu of the 
+Mensa Arcisstrasse, Munich).
+
+== USE IT ==
+Log out and in again. Then the plasmoid should be able to use the data engine.
+
+== PLASMOID DEVELOPER DOCUMENTATION ==
+
+= AVAILABLE SOURCES =
+locations
+=========
+Key: Location ID (locationID): unique ID of a location
+Value: (QString) locationName|address
