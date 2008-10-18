@@ -1,11 +1,10 @@
 /*
- * Mensaplan data engine for KDE 4.1+
- * Copyright 2008  Philipp Wagner <mail@philipp-wagner.com>
+ * Copyright (C) 2008  Philipp Wagner <mail@philipp-wagner.com>
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,7 +12,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
 #include "cafeteriamenusource.h"
@@ -76,17 +76,50 @@ void CafeteriaMenuSource::update()
 void CafeteriaMenuSource::readMenu(KJob *job)
 {
     if (job->error()) {
-        kDebug() << "Error while getting data: " << job->errorString();
+        emit error(objectName(), i18n("Unable to load data"), job->errorString());
         m_jobRunning = false;
         return;
     }
 
+    // don't know if that's neccessary as the KJob is deleted anyways
     disconnect(job, SIGNAL(result(KJob*)), this, SLOT(readMenu(KJob*)));
 
     removeAllData();
 
     QDomDocument doc("menu");
-    doc.setContent(dynamic_cast<CafeteriaJob*>(job)->xmlData());
+    QString errorMsg;
+    bool ret;
+    ret = doc.setContent(dynamic_cast<CafeteriaJob*>(job)->xmlData(), false, &errorMsg);
+    if (!ret) {
+        emit error(objectName(), i18n("Unable to parse result XML from the web service"), errorMsg);
+        m_jobRunning = false;
+        return;
+    }
+
+    // check status
+    QDomNodeList statusList = doc.documentElement().elementsByTagName("status");
+    if (statusList.isEmpty()) {
+        emit error(objectName(), i18n("Result XML contains no status tag."), "");
+        m_jobRunning = false;
+        return;
+    }
+    QString statusText = statusList.at(0).firstChild().nodeValue();
+    setData("status", statusText);
+    if (statusText != "ok") {
+        checkForUpdate();
+        return;
+    }
+
+    // location and date
+    QDomNodeList tmpList;
+    tmpList = doc.documentElement().elementsByTagName("location");
+    if (!tmpList.isEmpty()) {
+        setData("location", tmpList.at(0).firstChild().nodeValue());
+    }
+    tmpList = doc.documentElement().elementsByTagName("date");
+    if (!tmpList.isEmpty()) {
+        setData("date", QDate::fromString(tmpList.at(0).firstChild().nodeValue(), Qt::ISODate));
+    }
 
     QDomNodeList items = doc.documentElement().elementsByTagName("item");
     uint cnt = 0;
@@ -95,13 +128,13 @@ void CafeteriaMenuSource::readMenu(KJob *job)
         QString name = currentNode.firstChildElement("name").firstChild().nodeValue();
         QString value = currentNode.firstChildElement("value").firstChild().nodeValue();
         double price = currentNode.firstChildElement("price").firstChild().nodeValue().toDouble();
-        setData(QString::number(cnt), QString("%1|%2|%3").arg(name).arg(value).arg(price, 0, 'f', 2));
+        setData("item:"+QString::number(cnt), QString("%1|%2|%3").arg(name).arg(value).arg(price, 0, 'f', 2));
         ++cnt;
     }
 
     m_jobRunning = false;
     checkForUpdate();
-    kDebug() << "completed reading menu";
+    kDebug() << "menu read";
 }
 
 #include "cafeteriamenusource.h"

@@ -1,11 +1,10 @@
 /*
- * Mensaplan data engine for KDE 4.1+
- * Copyright 2008  Philipp Wagner <mail@philipp-wagner.com>
+ * Copyright (C) 2008  Philipp Wagner <mail@philipp-wagner.com>
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,7 +12,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
 #include "cafeteriaengine.h"
@@ -24,6 +24,7 @@
 #include <KJob>
 #include "locationsource.h"
 #include "cafeteriamenusource.h"
+#include "config.h"
 
 KUrl CafeteriaEngine::m_serviceUrl;
 
@@ -32,13 +33,15 @@ CafeteriaEngine::CafeteriaEngine(QObject* parent, const QVariantList& args)
 {
     Q_UNUSED(args)
 
-    // there should be absoluteley no need to update more often than every 20s
-    //setMinimumPollingInterval(1 * 1000);
+    // there should be no need to update more often than every 20 minutes
+    setMinimumPollingInterval(20 * 60 * 1000);
 
-    // TODO: find a way to make this configurable
-    m_serviceUrl = KUrl("http://philipp.wagner.name/cafeteriamenu/cafeteriamenu-xml.php");
+    // the URL is defined inside config.h
+    m_serviceUrl = KUrl(WEBSERVICE_URL);
 
     addSource(LocationSource::self());
+    connect(LocationSource::self(), SIGNAL(error(const QString&, const QString&, const QString&)),
+            this, SLOT(sourceError(const QString&, const QString&, const QString&)));
 }
 
 CafeteriaEngine::~CafeteriaEngine()
@@ -71,9 +74,6 @@ bool CafeteriaEngine::sourceRequestEvent(const QString &name)
         return false;
     }
 
-    // We do not have any special code to execute the
-    // first time a source is requested, so we just call
-    // updateSourceEvent().
     return updateSourceEvent(name);
 }
 
@@ -113,10 +113,21 @@ bool CafeteriaEngine::updateSourceEvent(const QString &name)
         source = new CafeteriaMenuSource(location, date, this);
         source->setObjectName(name);
         addSource(source);
+        connect(source, SIGNAL(error(const QString&, const QString&, const QString&)),
+                this, SLOT(sourceError(const QString&, const QString&, const QString&)));
     }
 
     source->update();
     return true;
+}
+
+void CafeteriaEngine::sourceError(const QString &source, const QString &errorMsg, const QString &additionalInfo)
+{
+    Plasma::DataContainer *errorContainer = new Plasma::DataContainer(this);
+    errorContainer->setObjectName("error:"+source);
+    errorContainer->setData("msg", errorMsg);
+    errorContainer->setData("additionalInfo", additionalInfo);
+    addSource(errorContainer);
 }
 
 

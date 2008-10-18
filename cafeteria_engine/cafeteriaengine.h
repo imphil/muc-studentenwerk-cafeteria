@@ -1,11 +1,10 @@
 /*
- * Mensaplan data engine for KDE 4.1+
- * Copyright 2008  Philipp Wagner <mail@philipp-wagner.com>
+ * Copyright (C) 2008  Philipp Wagner <mail@philipp-wagner.com>
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,7 +12,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
 #ifndef CAFETERIAENGINE_H_
@@ -51,16 +51,13 @@ class CafeteriaEngine : public Plasma::DataEngine
 
         static KUrl serviceUrl();
         static void setServiceUrl(const KUrl &serviceUrl);
-
         void init();
 
-    protected:
-        // this virtual function is called when a new source is requested
-        bool sourceRequestEvent(const QString& name);
+    public slots:
+        void sourceError(const QString&, const QString&, const QString&);
 
-        // this virtual function is called when an automatic update
-        // is triggered for an existing source (ie: when a valid update
-        // interval is set when requesting a source)
+    protected:
+        bool sourceRequestEvent(const QString& name);
         bool updateSourceEvent(const QString& source);
 
     private:

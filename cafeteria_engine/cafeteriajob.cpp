@@ -24,6 +24,7 @@
 #include <KIO/Job>
 #include <QByteArray>
 #include <QTimer>
+#include <KIO/TransferJob>
 
 CafeteriaJob::CafeteriaJob(const QString &action, const CafeteriaJobParameters &parameters)
     : KJob()
@@ -68,13 +69,19 @@ void CafeteriaJob::fetchData()
 void CafeteriaJob::recv(KIO::Job*, const QByteArray& data)
 {
     m_rcv_data += data;
-    //kDebug() << data;
 }
 
 void CafeteriaJob::httpResult(KJob *job)
 {
-    setError(job->error());
-    setErrorText(job->errorText());
+    if (dynamic_cast<KIO::TransferJob*>(job)->isErrorPage()) {
+        // unfortunately, a 404 or 500 HTTP status code is not reported as
+        // error. But in the end, it's an error we need to handle
+        setError(1);
+        setErrorText(i18n("got HTTP error code"));
+    } else {
+        setError(job->error());
+        setErrorText(job->errorText());
+    }
 
     emitResult();
 }

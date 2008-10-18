@@ -19,9 +19,9 @@
 #ifndef CAFETERIAJOB_H_
 #define CAFETERIAJOB_H_
 
+#include <QMap>
 #include <KJob>
 #include "cafeteriaengine.h"
-#include <QMap>
 
 class QString;
 class KUrl;

@@ -1,9 +1,22 @@
 === CAFETERIA DATA ENGINE ===
 
+== ABOUT ==
+This data engine gets the cafeteria menu from the Studentenwerk Muenchen. It's
+not fetched directly from their web page, but uses a web service instead.
+The URL is currently hardcoded inside config.h. Unfortunately, the 
+Studentenwerk does not provide a sane API for getting that data, so it's parsed
+out of the HTML pages they provide. This requires frequent updates of the
+parsing code, so it seemed best to do that once and not requiring everybody
+to update their data engines.
+I hope the documentation provided here is enough to answer most questions, if
+not, feel free to drop me a note at <mail@philipp-wagner.com>.
+
 == BUILD REQUIREMENTS ==
 Packages for SUSE:
 * libplasma1
 * kdebase4-workspace-devel
+* cmake
+(of course you'll need a working build environment, too)
 
 == BUILDING ==
 $ mkdir build
@@ -29,7 +42,48 @@ Log out and in again. Then the plasmoid should be able to use the data engine.
 == PLASMOID DEVELOPER DOCUMENTATION ==
 
 = AVAILABLE SOURCES =
-locations
-=========
-Key: Location ID (locationID): unique ID of a location
-Value: (QString) locationName|address
+Source Name: locations
+Result Data:
+  Key  : Location ID (locationID): unique ID of a location
+  Value: (QString) locationName|address
+
+Source Name: menu:<locationId>[:<date>]
+Parameters:
+  <locationId>: ID of the location (use the "locations" source to get all 
+                available locations
+  <date>      : get the menu for the given date. Format: YYYY-MM-DD (optional)
+                if omitted, the current date is used
+Result Data:
+  Key  : status
+  Value: (QString) whatever the <status> tag of the web service contains
+         this should be "ok" if everything is ok or "closed" if the cafeteria
+         is closed on that specific day.
+
+  Key  : date
+  Value: (QDate) date for which the menu is valid
+
+  Key  : location
+  Value: (QString) name of the cafeteria
+
+  Key  : item:<n>
+         where <n> is a number starting with 1, representing the order in which
+         the items where retrieved from the web service.
+  Value: (QString) <name>|<value>|<price>
+         price is actually a double using a dot as decimal separator.
+
+= ERROR HANDLING =
+Whenever an error occurrs while getting data for a source, a new source with
+the prefix "error:" and the source name is created. E.g. when requesting a
+source "locations", the errors will be reported on a source named 
+"error:locations". When querying data from a source, you should connect to 
+both sources:
+
+    m_engine->connectSource("locations", this);
+    m_engine->connectSource("error:locations", this);
+
+The "error:" source always contains the following data:
+  Key  : msg
+  Value: the error message (localized)
+
+  Key  : additionalInfo
+  Value: additional information about the error (usually not localized)
