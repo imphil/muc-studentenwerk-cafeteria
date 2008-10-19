@@ -1,0 +1,63 @@
+# Copyright (C) 2008 Philipp Wagner
+# This file is distributed under the same license as the plasma-applet-cafeteria package.
+#
+# Philipp Wagner <mail@philipp-wagner.com>, 2008.
+msgid ""
+msgstr ""
+"Project-Id-Version: plasma-applet-cafeteria\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2008-10-19 16:42+0200\n"
+"PO-Revision-Date: 2008-10-19 16:32+0200\n"
+"Last-Translator: Philipp Wagner <mail@philipp-wagner.com>\n"
+"Language-Team: German <kde-i18n-de@lists.kde.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Lokalize 0.2\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+
+#: build/ui_configuration.h:71
+msgid "Configuration"
+msgstr "Einstellungen "
+
+#: build/ui_configuration.h:72
+msgid "Location:"
+msgstr "Standort:"
+
+#: cafeteriaplasmoid.cpp:57
+msgid "Please choose a cafeteria location."
+msgstr "Bitte whlen Sie zuerst eine Mensa/Cafeteria."
+
+#: cafeteriaplasmoid.cpp:62
+msgid "Failed to load cafeteria DataEngine"
+msgstr "DataEngine kann nicht geladen werden."
+
+#: cafeteriaplasmoid.cpp:70
+msgid "go to previous day"
+msgstr "zum vorherigen Tag"
+
+#: cafeteriaplasmoid.cpp:73
+msgid "go to next day"
+msgstr "zum nchsten Tag"
+
+#: infopanel.cpp:100
+msgid "No menu available for today."
+msgstr "Kein Speiseplan fr heute verfgbar."
+
+#: infopanel.cpp:108
+msgid "Cafeteria is closed today."
+msgstr "Die Cafeteria/Mensa hat heute geschlossen."
+
+#: infopanel.cpp:116
+msgid "Loading data ..."
+msgstr "Lade Daten ..."
+
+#: locale/rc.cpp:1 rc.cpp:1
+msgctxt "NAME OF TRANSLATORS"
+msgid "Your names"
+msgstr "Philipp Wagner"
+
+#: locale/rc.cpp:2 rc.cpp:2
+msgctxt "EMAIL OF TRANSLATORS"
+msgid "Your emails"
+msgstr "mail@philipp-wagner.com"
