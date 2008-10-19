@@ -26,10 +26,12 @@
 #include "cafeteriaplasmoid.h"
 
 namespace Plasma {
-    class Label;
+    class TextEdit;
 }
 class QGraphicsLayoutItem;
 class QGraphicsGridLayout;
+class QSize;
+class KColorScheme;
 
 class InfoPanel : public QGraphicsWidget
 {
@@ -41,12 +43,16 @@ public:
     void clearMenu();
     void addMenuItem(const CafeteriaPlasmoid::MenuItem item);
     void showMenu();
+    void noDataAvailable();
+    void closed();
+    void displayLoadingInformation();
+    void displayError(const QString &msg);
 
 private:
     QGraphicsGridLayout *m_layout;
-    Plasma::Label* m_menuLabel;
+    Plasma::TextEdit* m_menuTextEdit;
     QList<CafeteriaPlasmoid::MenuItem> m_menuItems;
-
+    KColorScheme *m_colorScheme;
 };
 
 #endif /* INFOPANEL_H_ */

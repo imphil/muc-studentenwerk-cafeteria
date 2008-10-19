@@ -30,6 +30,11 @@ class QSizeF;
 class QGraphicsGridLayout;
 class InfoPanel;
 class KConfigDialog;
+class QDate;
+namespace Plasma {
+    class Label;
+    class PushButton;
+}
 
 class CafeteriaPlasmoid : public Plasma::Applet
 {
@@ -46,22 +51,28 @@ class CafeteriaPlasmoid : public Plasma::Applet
         ~CafeteriaPlasmoid();
         void init();
 
-
-
     public slots:
         void dataUpdated(const QString &name, const Plasma::DataEngine::Data &data);
         void createConfigurationInterface(KConfigDialog *parent);
 
     private slots:
         void configAccepted();
+        void changeDay();
+        void sourceAdded(const QString &source);
 
     private:
         Plasma::DataEngine *m_engine;
         InfoPanel *m_infoPanel;
+        Plasma::Label *m_cafeteriaNameLabel;
         QGraphicsGridLayout *m_layout;
         uint m_locationId;
         Ui::CafeteriaConfig configUi;
         QMap<QString, uint> m_locations;
+        QString m_previousQuery;
+        QDate m_date;
+        Plasma::PushButton *m_nextDayButton;
+        Plasma::PushButton *m_previousDayButton;
+
         void updateMenu();
 
 };

@@ -23,16 +23,22 @@
 #include <QGraphicsProxyWidget>
 #include <KSharedConfig>
 #include <KConfigDialog>
-
+#include <Plasma/Label>
+#include <Plasma/PushButton>
+#include <KPushButton>
+#include <QDate>
+#include <KGlobal>
 #include "infopanel.h"
 
 CafeteriaPlasmoid::CafeteriaPlasmoid(QObject *parent, const QVariantList &args)
     : Plasma::Applet(parent, args),
-    m_infoPanel(new InfoPanel)
+    m_infoPanel(new InfoPanel),
+    m_cafeteriaNameLabel(new Plasma::Label)
 {
     setAspectRatioMode(Plasma::IgnoreAspectRatio);
     setHasConfigurationInterface(true);
-    resize(350, 300);
+    resize(420, 250); // with, height
+    setMinimumWidth(420); // make it the same as infoPanel!
 
     setBackgroundHints(DefaultBackground);
 }
@@ -47,6 +53,9 @@ void CafeteriaPlasmoid::init()
     KConfigGroup cg = config();
     m_locationId = cg.readEntry("locationId").toInt();
 
+    // this displays a button to configure the plasmoid if no location is chosen
+    setConfigurationRequired(m_locationId == 0, i18n("Please choose a cafeteria location."));
+
     // connect with engine
     m_engine = dataEngine("cafeteria");
     if (!m_engine->isValid()) {
@@ -54,20 +63,57 @@ void CafeteriaPlasmoid::init()
         return;
     }
 
-    // create layout
+    // create layout,
+    m_previousDayButton = new Plasma::PushButton;
+    m_nextDayButton = new Plasma::PushButton;
+    m_previousDayButton->nativeWidget()->setIcon(KIcon("go-previous"));
+    m_previousDayButton->nativeWidget()->setToolTip(i18n("go to previous day"));
+    m_previousDayButton->nativeWidget()->setMaximumWidth(40);
+    m_nextDayButton->nativeWidget()->setIcon(KIcon("go-next"));
+    m_nextDayButton->nativeWidget()->setToolTip(i18n("go to next day"));
+    m_nextDayButton->nativeWidget()->setMaximumWidth(40);
     m_layout = new QGraphicsGridLayout();
-    m_layout->addItem(m_infoPanel, 0, 0);
+    m_layout->addItem(m_previousDayButton, 0, 0, Qt::AlignLeft);
+    m_layout->addItem(m_cafeteriaNameLabel, 0, 1, Qt::AlignHCenter | Qt::AlignVCenter);
+    m_layout->addItem(m_nextDayButton, 0, 2, Qt::AlignRight);
+    m_layout->addItem(m_infoPanel, 1, 0, 1, 3);
     setLayout(m_layout);
 
+    // connect date buttons
+    connect(m_previousDayButton, SIGNAL(clicked()), this, SLOT(changeDay()));
+    connect(m_nextDayButton, SIGNAL(clicked()), this, SLOT(changeDay()));
+
+    m_date = QDate::currentDate();
+    m_previousDayButton->nativeWidget()->setDisabled(true);
+
     // connect sources
+    connect(m_engine, SIGNAL(sourceAdded(const QString&)),
+            this, SLOT(sourceAdded(const QString&)));
     m_engine->connectSource("locations", this);
+}
+
+void CafeteriaPlasmoid::sourceAdded(const QString &source)
+{
+    // we always connect to error sources
+    if (source.startsWith("error:")) {
+        m_engine->connectSource(source, this);
+    }
 }
 
 void CafeteriaPlasmoid::dataUpdated(const QString& source, const Plasma::DataEngine::Data &data)
 {
     kDebug() << "dataUpdated(" << source << ") called";
 
-    if (source == "locations") {
+    if (data.isEmpty()) {
+        kDebug() << "empty update";
+        return;
+    }
+
+    if (source.startsWith("error:")) {
+        // an error occurred while getting some data
+        m_infoPanel->displayError(data.value("msg").toString());
+        return;
+    } else if (source == "locations") {
         // update list of available locations
         m_locations.clear();
         Plasma::DataEngine::Data::const_iterator i;
@@ -79,34 +125,74 @@ void CafeteriaPlasmoid::dataUpdated(const QString& source, const Plasma::DataEng
         if (m_locationId != 0) {
             updateMenu();
         }
-        kDebug() << "Locations updated";
     } else if (source.startsWith("menu:")) {
         // update menu
-        // we use a QMap here to sort the items we get out of data by key
-        QMap<uint, MenuItem> menuItemsSortMap;
-        Plasma::DataEngine::Data::const_iterator i;
-        for (i = data.constBegin(); i != data.constEnd(); ++i) {
-            QStringList parts = i.value().toString().split('|');
-            MenuItem menuItem;
-            menuItem.name = parts.at(0);
-            menuItem.value = parts.at(1);
-            menuItem.price = parts.at(2).toDouble();
-            menuItemsSortMap.insert(i.key().toInt(), menuItem);
+        if (data.isEmpty()) {
+            kDebug() << data;
+            m_infoPanel->noDataAvailable();
+        } else {
+            QString status;
+            // we use a QMap here to sort the items we get out of data by key
+            QMap<uint, MenuItem> menuItemsSortMap;
+            Plasma::DataEngine::Data::const_iterator i;
+            for (i = data.constBegin(); i != data.constEnd(); ++i) {
+                if (i.key().startsWith("item:")) {
+                    QStringList parts = i.value().toString().split('|');
+                    MenuItem menuItem;
+                    menuItem.name = parts.at(0);
+                    menuItem.value = parts.at(1);
+                    menuItem.price = parts.at(2).toDouble();
+                    menuItemsSortMap.insert(i.key().mid(5).toInt(), menuItem);
+                } else if (i.key() == "status") {
+                    status = i.value().toString();
+                }
+                // other available keys (not used): date, location
+            }
+
+            m_infoPanel->clearMenu();
+            if (status == "ok") {
+                foreach (MenuItem menuItem, menuItemsSortMap) {
+                    m_infoPanel->addMenuItem(menuItem);
+                }
+                m_infoPanel->showMenu();
+            } else if (status == "closed") {
+                m_infoPanel->closed();
+            } else {
+                m_infoPanel->noDataAvailable();
+            }
         }
 
-        foreach (MenuItem menuItem, menuItemsSortMap) {
-            m_infoPanel->addMenuItem(menuItem);
-        }
-        m_infoPanel->showMenu();
+        // resize to fit
+        /*qreal left, top, right, bottom;
+        getContentsMargins(&left, &top, &right, &bottom);
+        resize(m_layout->sizeHint(Qt::PreferredSize) + QSizeF(left+right, top+bottom));
+        updateGeometry();*/
     }
 }
 
 void CafeteriaPlasmoid::updateMenu()
 {
-    QString query = "menu:%1";
-    query = query.arg(m_locationId);
+    kDebug() << "updating menu";
+    //m_engine->disconnectSource(m_previousQuery, this);
+
+     QString text = QString("<center><big>%1</big><br><small>(%2)</small></center>")
+            .arg(m_locations.key(m_locationId))
+            .arg(KGlobal::locale()->formatDate(m_date, KLocale::FancyLongDate));
+    m_cafeteriaNameLabel->setText(text);
+
+    m_infoPanel->displayLoadingInformation();
+
+    QString query = QString("menu:%1:%2")
+            .arg(m_locationId)
+            .arg(m_date.toString(Qt::ISODate));
+
+    if (m_engine->sources().contains(query)) {
+        Plasma::DataEngine::Data data = m_engine->query(query);
+        if (!data.isEmpty()) {
+            dataUpdated(query, data);
+        }
+    }
     m_engine->connectSource(query, this);
-    //m_engine->connectSource("Error:" + query, this);
 }
 
 void CafeteriaPlasmoid::createConfigurationInterface(KConfigDialog *parent)
@@ -158,7 +244,24 @@ void CafeteriaPlasmoid::configAccepted()
     if (changed) {
         emit configNeedsSaving();
         updateMenu();
+        setConfigurationRequired(false);
     }
+}
+
+void CafeteriaPlasmoid::changeDay()
+{
+    if (sender() == m_previousDayButton) {
+        m_date = m_date.addDays(-1);
+    } else if (sender() == m_nextDayButton) {
+        m_date = m_date.addDays(1);
+    }
+
+    if (m_date <= QDate::currentDate()) {
+        m_previousDayButton->nativeWidget()->setDisabled(true);
+    } else {
+        m_previousDayButton->nativeWidget()->setDisabled(false);
+    }
+    updateMenu();
 }
 
 
