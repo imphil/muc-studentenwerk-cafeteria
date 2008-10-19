@@ -21,7 +21,7 @@ Packages for SUSE:
 == BUILDING ==
 $ mkdir build
 $ cd build
-$ cmake -DPLUGIN_INSTALL_DIR=/usr/lib64/kde4/ -DSERVICES_INSTALL_DIR=/usr/share/kde4/services/ ..
+$ cmake -DPLUGIN_INSTALL_DIR=`kde4-config --install module` -DSERVICES_INSTALL_DIR=`kde4-config --install services` -DLOCALE_INSTALL_DIR=`kde4-config --install locale` ..
 $ make
 $ sudo make install
 $ sudo kbuildsycoca4

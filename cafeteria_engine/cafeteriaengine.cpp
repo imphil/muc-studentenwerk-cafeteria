@@ -64,7 +64,7 @@ void CafeteriaEngine::setServiceUrl(const KUrl &serviceUrl)
 
 bool CafeteriaEngine::sourceRequestEvent(const QString &name)
 {
-    if (name == "locations") {
+    if (name == "locations" || name.startsWith("error:")) {
         // these are updated by the engine itself, not consumers
         return true;
     }
