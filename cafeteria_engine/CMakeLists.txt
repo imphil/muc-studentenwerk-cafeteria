@@ -3,7 +3,6 @@ project(cafeteria_engine)
 # Find the required libaries
 find_package(KDE4 REQUIRED)
 include(KDE4Defaults)
-find_package(Plasma REQUIRED)
 
 add_definitions (${QT_DEFINITIONS} ${KDE4_DEFINITIONS})
 include_directories(
@@ -23,7 +22,7 @@ set(cafeteria_engine_SRCS
 # Now make sure all files get to the right place
 kde4_add_plugin(plasma_engine_cafeteria ${cafeteria_engine_SRCS})
 target_link_libraries(plasma_engine_cafeteria
-                      ${PLASMA_LIBS}
+                      ${KDE4_PLASMA_LIBS}
                       ${KDE4_KDEUI_LIBS}
                       ${KDE4_KIO_LIBS}
                       ${QT_QTXML_LIBS})
