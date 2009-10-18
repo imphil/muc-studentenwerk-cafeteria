@@ -1,3 +1,0 @@
-* better handling of network outages
-  -> cache last result if no network is available?
-  -> return some kind of error message?
