@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008  Philipp Wagner <mail@philipp-wagner.com>
+ * Copyright (C) 2008-2009  Philipp Wagner <mail@philipp-wagner.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,17 +19,20 @@
 #ifndef CAFETERIAENGINE_H_
 #define CAFETERIAENGINE_H_
 
+
 #include <KUrl>
 #include <Plasma/DataEngine>
 #include <Plasma/DataContainer>
 #include <Plasma/Service>
 #include <Plasma/ServiceJob>
-#include <QString>
+#include <Solid/Networking>
 
 
 class LocationSource;
 class KJob;
 class QStringList;
+class CafeteriaMenuCache;
+
 namespace KIO
 {
     class Job;
@@ -47,7 +50,6 @@ class CafeteriaEngine : public Plasma::DataEngine
         };
 
         CafeteriaEngine(QObject* parent, const QVariantList& args);
-        virtual ~CafeteriaEngine();
 
         static KUrl serviceUrl();
         static void setServiceUrl(const KUrl &serviceUrl);
@@ -55,6 +57,7 @@ class CafeteriaEngine : public Plasma::DataEngine
 
     public slots:
         void sourceError(const QString&, const QString&, const QString&);
+        void networkStatusChanged(Solid::Networking::Status status);
 
     protected:
         bool sourceRequestEvent(const QString& name);
@@ -66,7 +69,8 @@ class CafeteriaEngine : public Plasma::DataEngine
 
         static KUrl m_serviceUrl;
         QStringList m_sources;
-        LocationSource *m_locationSource;
+        LocationSource* m_locationSource;
+        CafeteriaMenuCache* m_menuCache;
 
 };
 

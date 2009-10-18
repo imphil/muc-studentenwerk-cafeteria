@@ -22,10 +22,13 @@
 #include <QDate>
 #include <QList>
 #include <QByteArray>
+#include <QDomDocument>
+
 #include <KJob>
 #include <Plasma/DataContainer>
 
 #include "cafeteriaengine.h"
+#include "cafeteriamenucache.h"
 
 class CafeteriaMenuSource : public Plasma::DataContainer
 {
@@ -35,7 +38,7 @@ class CafeteriaMenuSource : public Plasma::DataContainer
     Q_PROPERTY(CafeteriaEngine::CafeteriaLocation location READ location WRITE setLocation)
 
     public:
-        CafeteriaMenuSource(CafeteriaEngine::CafeteriaLocation location, QDate &date, QObject* parent);
+        CafeteriaMenuSource(CafeteriaEngine::CafeteriaLocation location, QDate &date, CafeteriaMenuCache* menuCache, QObject* parent);
         virtual ~CafeteriaMenuSource();
 
         QDate date() const;
@@ -49,8 +52,12 @@ class CafeteriaMenuSource : public Plasma::DataContainer
 
     private slots:
         void readMenu(KJob *job);
+        void fetchMenuFromCache();
 
     private:
+        void fetchMenuFromNetwork();
+
+        CafeteriaMenuCache* m_cache;
         QDate m_date;
         CafeteriaEngine::CafeteriaLocation m_location;
         bool m_jobRunning;

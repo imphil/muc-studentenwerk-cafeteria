@@ -18,19 +18,25 @@
 
 #include "cafeteriamenusource.h"
 #include "cafeteriajob.h"
+#include "xmldataparser.h"
 
-#include <QDomDocument>
 #include <QDomNode>
 #include <QDomNodeList>
 #include <QMap>
+#include <QTimer>
+
+#include <Solid/Networking>
 
 
-CafeteriaMenuSource::CafeteriaMenuSource(CafeteriaEngine::CafeteriaLocation location, QDate &date, QObject* parent)
+CafeteriaMenuSource::CafeteriaMenuSource(CafeteriaEngine::CafeteriaLocation location,
+                                         QDate &date, CafeteriaMenuCache* menuCache,
+                                         QObject* parent)
     : Plasma::DataContainer(parent)
 {
     m_date = date;
     m_location = location;
     m_jobRunning = false;
+    m_cache = menuCache;
 }
 
 CafeteriaMenuSource::~CafeteriaMenuSource()
@@ -60,10 +66,44 @@ void CafeteriaMenuSource::setLocation(CafeteriaEngine::CafeteriaLocation locatio
 void CafeteriaMenuSource::update()
 {
     if (m_jobRunning) {
-        kDebug() << "another job is running";
+        kDebug() << "another network job is running";
         return;
     }
 
+    Solid::Networking::Status status = Solid::Networking::status();
+    if (status == Solid::Networking::Connected ||
+        status == Solid::Networking::Unknown) {
+        fetchMenuFromNetwork();
+    } else {
+        // no idea why this is necessary, but otherwise the checkForUpdate()
+        // call inside fetchMenuFromCache() does not work
+        // (possibly not in main event loop?)
+        QTimer::singleShot(0, this, SLOT(fetchMenuFromCache()));
+    }
+}
+
+void CafeteriaMenuSource::fetchMenuFromCache()
+{
+    kDebug() << "reading cached menu for " << objectName();
+    if (!m_cache->isCached(objectName())) {
+        emit error(objectName(), i18n("Unable to load data"), "Data not cached.");
+    }
+
+    removeAllData();
+    Plasma::DataEngine::Data d;
+    if (!m_cache->get(objectName(), &d)) {
+        emit error(objectName(), i18n("Unable to load data"), "Loading data from cache failed.");
+    }
+    foreach (QString key, d.keys()) {
+        setData(key, d.value(key));
+    }
+
+    checkForUpdate();
+}
+
+void CafeteriaMenuSource::fetchMenuFromNetwork()
+{
+    kDebug() << "fetching menu from network for " << objectName();
     m_jobRunning = true;
     CafeteriaJobParameters parameters;
     parameters.insert("date", m_date.toString("yyyy-MM-dd"));
@@ -75,16 +115,16 @@ void CafeteriaMenuSource::update()
 
 void CafeteriaMenuSource::readMenu(KJob *job)
 {
+    m_jobRunning = false;
+
     if (job->error()) {
         emit error(objectName(), i18n("Unable to load data"), job->errorString());
-        m_jobRunning = false;
         return;
     }
 
     // don't know if that's neccessary as the KJob is deleted anyways
     disconnect(job, SIGNAL(result(KJob*)), this, SLOT(readMenu(KJob*)));
 
-    removeAllData();
 
     QDomDocument doc("menu");
     QString errorMsg;
@@ -92,49 +132,22 @@ void CafeteriaMenuSource::readMenu(KJob *job)
     ret = doc.setContent(dynamic_cast<CafeteriaJob*>(job)->xmlData(), false, &errorMsg);
     if (!ret) {
         emit error(objectName(), i18n("Unable to parse result XML from the web service"), errorMsg);
-        m_jobRunning = false;
         return;
     }
 
-    // check status
-    QDomNodeList statusList = doc.documentElement().elementsByTagName("status");
-    if (statusList.isEmpty()) {
-        emit error(objectName(), i18n("Result XML contains no status tag."), "");
-        m_jobRunning = false;
-        return;
+    Plasma::DataEngine::Data d;
+    if (!XMLDataParser::parseMenuXML(doc, &d, &errorMsg)) {
+        emit error(objectName(), i18n("Unable to load data"), errorMsg);
     }
-    QString statusText = statusList.at(0).firstChild().nodeValue();
-    setData("status", statusText);
-    if (statusText != "ok") {
-        checkForUpdate();
-        return;
+    m_cache->set(objectName(), &d);
+
+    // update data source with new data
+    removeAllData();
+    foreach (QString key, d.keys()) {
+        setData(key, d.value(key));
     }
 
-    // location and date
-    QDomNodeList tmpList;
-    tmpList = doc.documentElement().elementsByTagName("location");
-    if (!tmpList.isEmpty()) {
-        setData("location", tmpList.at(0).firstChild().nodeValue());
-    }
-    tmpList = doc.documentElement().elementsByTagName("date");
-    if (!tmpList.isEmpty()) {
-        setData("date", QDate::fromString(tmpList.at(0).firstChild().nodeValue(), Qt::ISODate));
-    }
-
-    QDomNodeList items = doc.documentElement().elementsByTagName("item");
-    uint cnt = 0;
-    for (uint i=0; i<items.length(); i++) {
-        QDomNode currentNode = items.at(i);
-        QString name = currentNode.firstChildElement("name").firstChild().nodeValue();
-        QString value = currentNode.firstChildElement("value").firstChild().nodeValue();
-        double price = currentNode.firstChildElement("price").firstChild().nodeValue().toDouble();
-        setData("item:"+QString::number(cnt), QString("%1|%2|%3").arg(name).arg(value).arg(price, 0, 'f', 2));
-        ++cnt;
-    }
-
-    m_jobRunning = false;
     checkForUpdate();
-    kDebug() << "menu read";
 }
 
 #include "cafeteriamenusource.h"

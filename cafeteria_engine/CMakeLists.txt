@@ -17,7 +17,9 @@ set(cafeteria_engine_SRCS
     cafeteriaengine.cpp
     cafeteriajob.cpp
     locationsource.cpp
-    cafeteriamenusource.cpp)
+    cafeteriamenusource.cpp
+    xmldataparser.cpp
+    cafeteriamenucache.cpp)
 
 # Now make sure all files get to the right place
 kde4_add_plugin(plasma_engine_cafeteria ${cafeteria_engine_SRCS})
@@ -25,6 +27,7 @@ target_link_libraries(plasma_engine_cafeteria
                       ${KDE4_PLASMA_LIBS}
                       ${KDE4_KDEUI_LIBS}
                       ${KDE4_KIO_LIBS}
+                      ${KDE4_SOLID_LIBS}
                       ${QT_QTXML_LIBS})
 
 install(TARGETS plasma_engine_cafeteria

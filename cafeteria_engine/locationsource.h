@@ -19,8 +19,10 @@
 #ifndef LOCATIONSOURCE_H_
 #define LOCATIONSOURCE_H_
 
+#include <QString>
 #include <QList>
 #include <QByteArray>
+#include <QDomDocument>
 #include <KJob>
 #include <Plasma/DataContainer>
 
@@ -35,13 +37,15 @@ class LocationSource : public Plasma::DataContainer
         static LocationSource* self();
         LocationSource(QObject* parent);
         virtual ~LocationSource();
-
         bool validateLocationName(const QString &locationName) const;
         bool validateLocationId(const uint id) const;
         QList<CafeteriaEngine::CafeteriaLocation> getAllLocations();
         CafeteriaEngine::CafeteriaLocation getLocation(const QString &locationName) const;
         CafeteriaEngine::CafeteriaLocation getLocation(const uint locationId) const;
         QList<CafeteriaEngine::CafeteriaLocation> locations() const;
+
+    public slots:
+        void update();
 
     signals:
         void error(const QString&, const QString&, const QString&);
@@ -50,7 +54,11 @@ class LocationSource : public Plasma::DataContainer
         void readLocations(KJob*);
 
     private:
-        void fetchLocations();
+        QString getCachePath();
+        bool cacheFileExists();
+        void fetchLocationsFromCache();
+        void fetchLocationsFromNetwork();
+        void parseLocationXML(QDomDocument doc);
         QList<CafeteriaEngine::CafeteriaLocation> m_locations;
 };
 

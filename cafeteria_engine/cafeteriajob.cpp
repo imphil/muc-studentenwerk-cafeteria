@@ -45,6 +45,11 @@ CafeteriaJob::~CafeteriaJob()
 {
 }
 
+CafeteriaJobParameters CafeteriaJob::parameters()
+{
+    return m_parameters;
+}
+
 void CafeteriaJob::start()
 {
     QTimer::singleShot(0, this, SLOT(fetchData()));

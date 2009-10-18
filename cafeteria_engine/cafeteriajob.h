@@ -44,6 +44,7 @@ class CafeteriaJob : public KJob
         virtual ~CafeteriaJob();
         void start();
         QByteArray xmlData() const;
+        CafeteriaJobParameters parameters();
 
     private slots:
         void fetchData();

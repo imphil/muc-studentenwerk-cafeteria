@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008  Philipp Wagner <mail@philipp-wagner.com>
+ * Copyright (C) 2008-2009  Philipp Wagner <mail@philipp-wagner.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,14 +17,19 @@
  */
 
 #include "cafeteriaengine.h"
+#include "locationsource.h"
+#include "cafeteriamenusource.h"
+#include "cafeteriamenucache.h"
+#include "config.h"
+
 #include <QStringList>
 #include <QDate>
+#include <QTimer>
+
 #include <KDebug>
 #include <KIO/Job>
 #include <KJob>
-#include "locationsource.h"
-#include "cafeteriamenusource.h"
-#include "config.h"
+#include <KStandardDirs>
 
 KUrl CafeteriaEngine::m_serviceUrl;
 
@@ -39,17 +44,19 @@ CafeteriaEngine::CafeteriaEngine(QObject* parent, const QVariantList& args)
     // the URL is defined inside config.h
     m_serviceUrl = KUrl(WEBSERVICE_URL);
 
-    addSource(LocationSource::self());
-    connect(LocationSource::self(), SIGNAL(error(const QString&, const QString&, const QString&)),
-            this, SLOT(sourceError(const QString&, const QString&, const QString&)));
-}
-
-CafeteriaEngine::~CafeteriaEngine()
-{
+    m_menuCache = new CafeteriaMenuCache(this);
 }
 
 void CafeteriaEngine::init()
 {
+    addSource(LocationSource::self());
+    connect(LocationSource::self(), SIGNAL(error(const QString&, const QString&, const QString&)),
+            this, SLOT(sourceError(const QString&, const QString&, const QString&)));
+    LocationSource::self()->update();
+
+    // listen to changes in network connectivity
+    connect(Solid::Networking::notifier(), SIGNAL(statusChanged(Solid::Networking::Status)),
+            this, SLOT(networkStatusChanged(Solid::Networking::Status)));
 }
 
 KUrl CafeteriaEngine::serviceUrl()
@@ -62,14 +69,25 @@ void CafeteriaEngine::setServiceUrl(const KUrl &serviceUrl)
     m_serviceUrl = serviceUrl;
 }
 
+void CafeteriaEngine::networkStatusChanged(Solid::Networking::Status status)
+{
+    if (status == Solid::Networking::Connected) {
+        // we're now connected - let's try an update of all data sources
+        kDebug() << "Network connectivity changed: now online!";
+        // for whatever reason the HTTP KIO Slave thinks the network is not
+        // yet available - wait a bit until the dust settles
+        QTimer::singleShot(1000, this, SLOT(updateAllSources()));
+    }
+}
+
 bool CafeteriaEngine::sourceRequestEvent(const QString &name)
 {
-    if (name == "locations" || name.startsWith("error:")) {
+    if (name.startsWith("error:")) {
         // these are updated by the engine itself, not consumers
         return true;
     }
 
-    if (!name.startsWith("menu:")) {
+    if (name != "locations" && !name.startsWith("menu:")) {
         kDebug() << "Invalid source name:" << name;
         return false;
     }
@@ -79,10 +97,20 @@ bool CafeteriaEngine::sourceRequestEvent(const QString &name)
 
 bool CafeteriaEngine::updateSourceEvent(const QString &name)
 {
+    int prefetchLocation = 0;
+
     kDebug() << "updateSourceEvent(" << name << ")";
     QStringList tokens = name.split(':');
+
+    // we have a special update mechanism for locations; update and skip the rest
+    if (tokens.at(0) == "locations") {
+        removeSource("error:locations");
+        LocationSource::self()->update();
+        return true;
+    }
+
     if (tokens.at(0) != "menu") {
-        kDebug() << "action != \"menu\" (got " << tokens.at(0) << ")";
+        kDebug() << "action != \"menu\" (got "+tokens.at(0)+")";
         return false;
     }
     if (!LocationSource::self()->validateLocationId(tokens.at(1).toInt())) {
@@ -110,14 +138,22 @@ bool CafeteriaEngine::updateSourceEvent(const QString &name)
             kDebug() << "unable to create location with id "<<tokens.at(1);
             return false;
         }
-        source = new CafeteriaMenuSource(location, date, this);
+        prefetchLocation = location.id;
+        source = new CafeteriaMenuSource(location, date, m_menuCache, this);
         source->setObjectName(name);
         addSource(source);
         connect(source, SIGNAL(error(const QString&, const QString&, const QString&)),
                 this, SLOT(sourceError(const QString&, const QString&, const QString&)));
     }
 
+    removeSource("error:"+name);
     source->update();
+    emit scheduleSourcesUpdated();
+
+    // cache next couple days for this location
+    if (prefetchLocation)
+        m_menuCache->prefetch(prefetchLocation);
+
     return true;
 }
 

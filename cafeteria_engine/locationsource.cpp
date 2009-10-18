@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008  Philipp Wagner <mail@philipp-wagner.com>
+ * Copyright (C) 2008-2009  Philipp Wagner <mail@philipp-wagner.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,9 +19,13 @@
 #include "locationsource.h"
 #include "cafeteriajob.h"
 
-#include <QDomDocument>
 #include <QDomNode>
 #include <QDomNodeList>
+#include <QFile>
+#include <QIODevice>
+
+#include <KStandardDirs>
+#include <Solid/Networking>
 
 class LocationSourceSingleton
 {
@@ -46,16 +50,22 @@ LocationSource::LocationSource(QObject *parent)
     : Plasma::DataContainer(parent)
 {
     setObjectName("locations");
-    fetchLocations();
+
 }
 
 LocationSource::~LocationSource()
 {
 }
 
+QString LocationSource::getCachePath()
+{
+    return KStandardDirs::locateLocal("data", "plasma_engine_cafeteria/locations.cache");
+}
+
 bool LocationSource::validateLocationName(const QString &locationName) const
 {
     // TODO: add implementation
+    return true;
 }
 
 bool LocationSource::validateLocationId(const uint id) const
@@ -73,8 +83,50 @@ QList<CafeteriaEngine::CafeteriaLocation> LocationSource::getAllLocations()
     return m_locations;
 }
 
-void LocationSource::fetchLocations()
+bool LocationSource::cacheFileExists()
 {
+    return QFile::exists(getCachePath());
+}
+
+void LocationSource::update()
+{
+    Solid::Networking::Status status = Solid::Networking::status();
+    if (status == Solid::Networking::Connected ||
+        status == Solid::Networking::Unknown) {
+        fetchLocationsFromNetwork();
+    } else {
+        fetchLocationsFromCache();
+    }
+}
+
+void LocationSource::fetchLocationsFromCache()
+{
+    kDebug() << "Using locations from cache";
+    QFile file(getCachePath());
+    if (!file.open(QIODevice::ReadOnly)) {
+        kDebug() << "Unable to get locations from cache: opening file "+getCachePath()+" failed";
+        emit error(objectName(), i18n("Unable to load data"),
+                "Unable to get locations from cache: opening file "+getCachePath()+" failed");
+        return;
+    }
+
+    QDomDocument doc;
+    QString errorMsg;
+    int errorLine, errorColumn;
+    bool ret;
+    ret = doc.setContent(&file, false, &errorMsg, &errorLine, &errorColumn);
+    file.close();
+    if (!ret) {
+        emit error(objectName(), i18n("Unable to load data"), errorMsg);
+        return;
+    }
+    parseLocationXML(doc);
+}
+
+void LocationSource::fetchLocationsFromNetwork()
+{
+    kDebug() << "Reading locations from network";
+
     CafeteriaJob *job = new CafeteriaJob("get_locations");
     connect(job, SIGNAL(result(KJob*)), this, SLOT(readLocations(KJob*)));
     job->start();
@@ -96,6 +148,20 @@ void LocationSource::readLocations(KJob *job)
         return;
     }
 
+    // write new data to cache; we don't care if this fails
+    QFile file(getCachePath());
+    if (!file.open(QIODevice::ReadWrite))
+        kDebug() << "Unable to cache locations: opening file "+getCachePath()+" failed";
+    if (file.write(dynamic_cast<CafeteriaJob*>(job)->xmlData()) == -1)
+        kDebug() << "Unable to cache locations: writing to file "+getCachePath()+" failed";
+    file.close();
+
+
+    parseLocationXML(doc);
+}
+
+void LocationSource::parseLocationXML(QDomDocument doc)
+{
     // temporary variable for this->m_locations to provide atomic updates
     QList<CafeteriaEngine::CafeteriaLocation> locationsTmp;
 

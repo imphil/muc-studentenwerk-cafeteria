@@ -36,6 +36,11 @@ connection). To get a menu for a location, type menu:421 into the source input
 field and wait for the result to come up (you should get today's menu of the 
 Mensa Arcisstrasse, Munich).
 
+To get debug messages (the messages with kDebug() in the source), run
+$ kdebugdialog
+and select everything (there can never be enough debug information ;-)). Then
+run plasmaengineexplorer again.
+
 == USE IT ==
 Log out and in again. Then the plasmoid should be able to use the data engine.
 

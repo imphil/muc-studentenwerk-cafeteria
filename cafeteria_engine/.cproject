@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?fileVersion 4.0.0?>
+
+<cproject>
+<storageModule moduleId="org.eclipse.cdt.core.settings">
+<cconfiguration id="org.eclipse.cdt.core.default.config.1">
+<storageModule buildSystemId="org.eclipse.cdt.core.defaultConfigDataProvider" id="org.eclipse.cdt.core.default.config.1" moduleId="org.eclipse.cdt.core.settings" name="Configuration">
+<externalSettings/>
+<extensions>
+<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+<extension id="org.eclipse.cdt.core.GNU_ELF" point="org.eclipse.cdt.core.BinaryParser">
+<attribute key="addr2line" value="addr2line"/>
+<attribute key="c++filt" value="c++filt"/>
+</extension>
+</extensions>
+</storageModule>
+<storageModule moduleId="org.eclipse.cdt.core.language.mapping">
+<project-mappings/>
+</storageModule>
+<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+<storageModule moduleId="org.eclipse.cdt.core.pathentry">
+<pathentry excluding="**/CMakeFiles/" kind="out" path=""/>
+<pathentry kind="mac" name="_BSD_SOURCE" path="" value=""/>
+<pathentry kind="mac" name="_XOPEN_SOURCE" path="" value="500"/>
+<pathentry kind="mac" name="QT_NO_STL" path="" value=""/>
+<pathentry kind="mac" name="QT_NO_CAST_TO_ASCII" path="" value=""/>
+<pathentry kind="mac" name="_REENTRANT" path="" value=""/>
+<pathentry kind="mac" name="KDE_DEPRECATED_WARNINGS" path="" value=""/>
+<pathentry include="/home/philipp/workspace/cafeteria_engine" kind="inc" path="" system="true"/>
+<pathentry include="/home/philipp/workspace/cafeteria_engine/build" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/KDE" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/QtXmlPatterns" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/QtWebKit" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/QtHelp" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/QtAssistant" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/QtDBus" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/QtTest" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/QtUiTools" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/QtScript" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/QtSvg" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/QtXml" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/QtSql" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/QtOpenGL" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/QtNetwork" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/QtDesigner" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/Qt3Support" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/QtGui" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/QtCore" kind="inc" path="" system="true"/>
+<pathentry include="/usr/include/Qt" kind="inc" path="" system="true"/>
+<pathentry include="/usr/share/qt4/mkspecs/default" kind="inc" path="" system="true"/>
+</storageModule>
+<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">
+<buildTargets>
+<target name="all" path="" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<buildCommand>/usr/bin/gmake</buildCommand>
+<buildArguments/>
+<buildTarget>all</buildTarget>
+<stopOnError>true</stopOnError>
+<useDefaultCommand>false</useDefaultCommand>
+</target>
+<target name="preinstall" path="" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<buildCommand>/usr/bin/gmake</buildCommand>
+<buildArguments/>
+<buildTarget>preinstall</buildTarget>
+<stopOnError>true</stopOnError>
+<useDefaultCommand>false</useDefaultCommand>
+</target>
+<target name="clean" path="" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<buildCommand>/usr/bin/gmake</buildCommand>
+<buildArguments/>
+<buildTarget>clean</buildTarget>
+<stopOnError>true</stopOnError>
+<useDefaultCommand>false</useDefaultCommand>
+</target>
+<target name="install" path="" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<buildCommand>/usr/bin/gmake</buildCommand>
+<buildArguments/>
+<buildTarget>install</buildTarget>
+<stopOnError>true</stopOnError>
+<useDefaultCommand>false</useDefaultCommand>
+</target>
+<target name="install/strip" path="" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<buildCommand>/usr/bin/gmake</buildCommand>
+<buildArguments/>
+<buildTarget>install/strip</buildTarget>
+<stopOnError>true</stopOnError>
+<useDefaultCommand>false</useDefaultCommand>
+</target>
+<target name="plasma_engine_cafeteria" path="" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<buildCommand>/usr/bin/gmake</buildCommand>
+<buildArguments/>
+<buildTarget>plasma_engine_cafeteria</buildTarget>
+<stopOnError>true</stopOnError>
+<useDefaultCommand>false</useDefaultCommand>
+</target>
+<target name="rebuild_cache" path="" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<buildCommand>/usr/bin/gmake</buildCommand>
+<buildArguments/>
+<buildTarget>rebuild_cache</buildTarget>
+<stopOnError>true</stopOnError>
+<useDefaultCommand>false</useDefaultCommand>
+</target>
+<target name="test" path="" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<buildCommand>/usr/bin/gmake</buildCommand>
+<buildArguments/>
+<buildTarget>test</buildTarget>
+<stopOnError>true</stopOnError>
+<useDefaultCommand>false</useDefaultCommand>
+</target>
+</buildTargets>
+</storageModule>
+<storageModule moduleId="scannerConfiguration">
+<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.make.core.GCCStandardMakePerProjectProfile"/>
+<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerProjectProfile">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="specsFile">
+<runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="makefileGenerator">
+<runAction arguments="-f ${project_name}_scd.mk" command="make" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+</storageModule>
+</cconfiguration>
+</storageModule>
+<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+<project id="cafeteria_engine.null.1" name="cafeteria_engine"/>
+</storageModule>
+</cproject>
