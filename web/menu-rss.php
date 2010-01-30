@@ -67,7 +67,7 @@ $rss = '<?xml version="1.0" encoding="utf-8"?>
 
   <channel>
     <title>'.htmlspecialchars($mensa['name']).'</title>
-    <link>http://www.philipp.wagner.name</link>
+    <link>http://www.philipp.wagner.name/cafeteriamenu</link>
     <atom:link href="http://philipp.wagner.name/cafeteriamenu/menu-rss.php?id='.$id.'" rel="self" type="application/rss+xml" />
     <description>Speiseplan des Studentenwerks München - '.htmlspecialchars($mensa['name']).'</description>
     <language>de-DE</language>

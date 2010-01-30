@@ -101,7 +101,7 @@ class MensaFood
     protected function fetchPrices()
     {
         $this->prices = array();
-        $url = 'http://www.studentenwerk-muenchen.de/mensa/preise_und_speisenangebot/';
+        $url = 'http://www.studentenwerk-muenchen.de/mensa/unsere_preise/';
         $domPage = $this->getDomDocument($url);
         $xpath = new DOMXPath($domPage);
         $categories = array(self::CATEGORY_NORMAL, self::CATEGORY_ORGANIC, self::CATEGORY_SPECIAL);
@@ -109,11 +109,11 @@ class MensaFood
         foreach ($categories as $category) {
             switch ($category) {
             case self::CATEGORY_NORMAL:
-        $query = "/html/body[@id='mensa']/div[@id='inhalt']/div[@id='content']/table[1]/tbody/tr[position()>=1][position()<=4]";
+                $query = "//table[@class='essenspreise']/tbody/tr[position()>=2][position()<=4]";
                 break;
             case self::CATEGORY_ORGANIC:
             case self::CATEGORY_SPECIAL:
-                $query = "/html/body[@id='mensa']/div[@id='inhalt']/div[@id='content']/table[1]/tbody/tr[position()>11][position()<=10]";
+                $query = "//table[@class='essenspreise']/tbody/tr[position()>=11][position()<=10]";
                 break;
             }
             $entries = $xpath->query($query);
@@ -121,11 +121,11 @@ class MensaFood
             $this->prices[$category] = array();
             foreach ($entries as $entry) {
                 // number
-                $tmp = trim($xpath->query("td[1]", $entry)->item(0)->nodeValue);
-                $nr = preg_replace('/^.+gericht\s(\d+)+.*$/sm', '\1', $tmp);
+                $tmp = trim($xpath->query("th[1]", $entry)->item(0)->nodeValue);
+                $nr = preg_replace('/^.+gericht\s+(\d+)+.*$/sm', '\1', $tmp);
                 // price
-                $tmp = trim($xpath->query("td[3]", $entry)->item(0)->nodeValue);
-                $price = (float)preg_replace('/^.*(\d+),(\d{2}) .*$/', '\1.\2', $tmp);
+                $tmp = trim($xpath->query("td[1]", $entry)->item(0)->nodeValue);
+                $price = preg_replace('/^.*(\d+),(\d{2}).*$/sm', '\1.\2', $tmp);
 
                 $this->prices[$category][$nr] = $price;
             }
@@ -181,14 +181,14 @@ class MensaFood
 
         // get relevant data from DOM document
         $xpath = new DOMXPath($domPage);
-        $query = "//div[@id='mitte']/table[2]//tr[position()>1]";
+        $query = "//table[@class='menu']//tr[position()>1]";
         $entries = $xpath->query($query, $domPage);
         $food = array();
         $sides = array();
         $nowSides = false;
         foreach ($entries as $entry) {
-            $leftCell = trim($entry->childNodes->item(1)->nodeValue);
-            $rightCell = trim($entry->childNodes->item(3)->nodeValue);
+            $leftCell = $xpath->query("td[1]", $entry)->item(0)->nodeValue;
+            $rightCell = $xpath->query("td[@class='beschreibung']/span[1]", $entry)->item(0)->nodeValue;
 
             if ($nowSides || (empty($leftCell) || preg_match('/^Beilagen$/', $leftCell))) {
                 // Side dishes
@@ -215,7 +215,7 @@ class MensaFood
                     throw new Exception("Unknown category $leftCell");
                 }
                 // number
-                $categoryNumber = preg_replace('/^\w+(?:gericht|essen) (\d).*$/', '\1', $leftCell);
+                $categoryNumber = preg_replace('/^\w+(?:gericht|essen)\s+(\d).*$/sm', '\1', $leftCell);
                 // food name
                 $foodName = trim(
                     preg_replace("/\s+/", ' ',
@@ -232,7 +232,8 @@ class MensaFood
 
         $this->sides = $sides;
         $this->food = $food;
-        return true;
+        
+        return (count($this->food) != 0);
     }
 
     /**
