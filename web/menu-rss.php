@@ -17,6 +17,7 @@
  */
  
 define('CACHE_DIR', dirname(__FILE__).'/cache');
+define('CACHE_TIMEOUT', 24*60*60); // cache timeout in seconds (24h)
 define('DEBUG', false);
 
 // don't do any input validation here, it's done after the cache lookup
@@ -27,10 +28,10 @@ if (empty($_GET['id'])) {
     $id = (int)$_GET['id'];
 }
 
-// we cache the results for two hours to reduce the load on the Studentenwerk
+// we cache the results for 24 hours to reduce the load on the Studentenwerk
 // homepage and improve our response time
 $cacheFile = CACHE_DIR."/menu-$id.rss";
-if (!DEBUG && file_exists($cacheFile) && filemtime($cacheFile) > time()-60*60*2) {
+if (!DEBUG && file_exists($cacheFile) && filemtime($cacheFile) > time()-CACHE_TIMEOUT) {
     echo file_get_contents($cacheFile);
     exit;
 }

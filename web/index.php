@@ -15,8 +15,8 @@ include('mensen.inc.php');
 foreach ($mensen as $mensa):
 ?>
   <li>
-    <a href="menu-rss.php?id=<?=$mensa['id']?>"><?=htmlspecialchars($mensa['name'])?></a><br/>
-    <?=htmlspecialchars($mensa['address'])?>
+    <a href="menu-rss.php?id=<?php echo $mensa['id']?>"><?php echo htmlspecialchars($mensa['name'])?></a><br/>
+    <?php echo htmlspecialchars($mensa['address'])?>
   </li>
 <?php
 endforeach;

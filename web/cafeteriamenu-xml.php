@@ -16,6 +16,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+define('CACHE_DIR', dirname(__FILE__).'/cache');
+define('CACHE_TIMEOUT', 24*60*60); // cache timeout in seconds (24h)
+define('DEBUG', false);
+
 require_once 'mensafood.php';
 
 // make sure that we get the right output formatting for floats
@@ -34,6 +39,7 @@ if (empty($_REQUEST['action']) ||
     $action = $_REQUEST['action'];
 }
 
+header('Content-Type: text/xml');
 $xml = '<?xml version="1.0" encoding="utf-8"?>
     <cafeteriamenu version="1.0">';
 
@@ -41,7 +47,8 @@ if ($action === 'get_menu') {
     $mensafood = new MensaFood();
 
     // get input parameters: date
-    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $_REQUEST['date'])) {
+    if (!empty($_REQUEST['date']) &&
+        preg_match('/^\d{4}-\d{2}-\d{2}$/', $_REQUEST['date'])) {
         $date = new DateTime($_REQUEST['date']);
     } else {
         $date = new DateTime();
@@ -50,8 +57,20 @@ if ($action === 'get_menu') {
     if (empty($_REQUEST['location']) || !ctype_digit($_REQUEST['location'])) {
         die('location request parameter missing or not a number');
     } else {
-        $mensafood->setLocation($_REQUEST['location']) || die('Invalid location ID');
+        $location = $_REQUEST['location'];
+        $mensafood->setLocation($location) || die('Invalid location ID');
     }
+
+
+    // we cache the results for 24 hours to reduce the load on the Studentenwerk
+    // homepage and improve our response time
+    $cacheIdentifier = "$action-".$date->format('Ymd')."-$location";
+    $cacheFile = CACHE_DIR."/$cacheIdentifier.xml";
+    if (!DEBUG && file_exists($cacheFile) && filemtime($cacheFile) > time()-CACHE_TIMEOUT) {
+        echo file_get_contents($cacheFile);
+        exit;
+    }
+
 
     $mensafood->setDate($date);
 
@@ -83,6 +102,7 @@ if ($action === 'get_menu') {
     }
 
     $xml .= '</menu>';
+
 } elseif ($action == 'get_locations') {
     $mensafood = new MensaFood();
     $xml .= '<locations>';
@@ -98,6 +118,12 @@ if ($action === 'get_menu') {
 
 $xml .= '</cafeteriamenu>';
 
-header('Content-Type: text/xml');
+
+// cache XML data
+if ($action == 'get_menu') {
+    $cacheinfo = '<!-- generated at '.date('Y-m-d H:i:s').'-->';
+    file_put_contents($cacheFile, $xml.$cacheinfo);
+}
+
 echo $xml;
 ?>
