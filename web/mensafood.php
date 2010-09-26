@@ -101,7 +101,7 @@ class MensaFood
     protected function fetchPrices()
     {
         $this->prices = array();
-        $url = 'http://www.studentenwerk-muenchen.de/mensa/unsere_preise/';
+        $url = 'http://www.studentenwerk-muenchen.de/mensa/unsere-preise/';
         $domPage = $this->getDomDocument($url);
         $xpath = new DOMXPath($domPage);
         $categories = array(self::CATEGORY_NORMAL, self::CATEGORY_ORGANIC, self::CATEGORY_SPECIAL);
