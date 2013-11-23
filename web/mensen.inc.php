@@ -59,6 +59,11 @@ $mensen = array(
     'id' => 432
   ),
   array(
+    'name' => 'StuBistro Mensa Rosenheim',
+    'address' => 'Hochschulstraße 1, Rosenheim',
+    'id' => 441
+  ),
+  array(
     'name' => 'Cafeteria Olympiapark',
     'address' => 'Connollystr.32, München',
     'id' => 523

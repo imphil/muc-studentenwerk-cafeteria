@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2008-2009  Philipp Wagner <mail@philipp-wagner.com>
+ * Copyright 2008-2013  Philipp Wagner <mail@philipp-wagner.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,8 @@ class MensaFood
     const CATEGORY_NORMAL = 1;  // Tagesgericht
     const CATEGORY_ORGANIC = 2; // Biogericht
     const CATEGORY_SPECIAL = 3; // Aktionsessen
+    const CATEGORY_SELFSERVICE = 4; // Self-Service
+    const CATEGORY_DESSERT = 5; // Dessert
 
     private $date;
     private $prices = null;
@@ -85,7 +87,12 @@ class MensaFood
         $page = $data;
 
         $tidy = new tidy;
-        $tidy->parseString($page, array('output-xml' => true, 'numeric-entities' => true, 'indent' => true, 'add-xml-decl' => true), 'utf8');
+        $tidy->parseString($page,
+                           array('output-xml' => true,
+                                 'numeric-entities' => true,
+                                 'indent' => true,
+                                 'add-xml-decl' => true),
+                           'utf8');
         $tidy->cleanRepair();
 
         $domPage = new DomDocument();
@@ -113,7 +120,7 @@ class MensaFood
                 break;
             case self::CATEGORY_ORGANIC:
             case self::CATEGORY_SPECIAL:
-                $query = "//table[@class='essenspreise']/tbody/tr[position()>=11][position()<=10]";
+                $query = "//table[@class='essenspreise']/tbody/tr[position()>=14][position()<=10]";
                 break;
             }
             $entries = $xpath->query($query);
@@ -185,24 +192,34 @@ class MensaFood
         $entries = $xpath->query($query, $domPage);
         $food = array();
         $sides = array();
-        $nowSides = false;
+        $action = 'dishes';
+        $prevAction = 'dishes';
         foreach ($entries as $entry) {
-            $leftCell = $xpath->query("td[1]", $entry)->item(0)->nodeValue;
+            $leftCell = trim($xpath->query("td[1]", $entry)->item(0)->nodeValue);
             $rightCell = $xpath->query("td[@class='beschreibung']/span[1]", $entry)->item(0)->nodeValue;
 
-            if ($nowSides || (empty($leftCell) || preg_match('/^Beilagen$/', $leftCell))) {
+            if (empty($leftCell)) {
+                $action = $prevAction;
+            } elseif (preg_match('/^(Beilagen|Aktion|Bio)$/', $leftCell)) {
+                $action = 'sides';
+            } elseif (preg_match('/^Self-Service$/', $leftCell)) {
+                $action = 'selfservice';
+            } elseif (preg_match('/^Dessert$/', $leftCell)) {
+                $action = 'dessert';
+            } else {
+                $action = 'dishes';
+            }
+            $prevAction = $action;
+
+            if ($action == 'sides') {
                 // Side dishes
-                $nowSides = true;
                 $sideDish = trim(
                     preg_replace("/\s+/", ' ',
                         str_replace("\n", ' ', $rightCell)
                     )
                 );
-                if (preg_match('/^Aktion$/', $leftCell)) {
-                    $sideDish .= ' (Aktion)';
-                }
                 $sides[] = $sideDish;
-            } else {
+            } elseif ($action == 'dishes') {
                 // Dishes
                 // category
                 if (strpos($leftCell, 'Tagesgericht') === 0) {
@@ -212,7 +229,7 @@ class MensaFood
                 } elseif (strpos($leftCell, 'Aktionsessen') === 0) {
                     $category = self::CATEGORY_SPECIAL;
                 } else {
-                    throw new Exception("Unknown category $leftCell");
+                    throw new Exception("Unknown category '$leftCell'");
                 }
                 // number
                 $categoryNumber = preg_replace('/^\w+(?:gericht|essen)\s+(\d).*$/sm', '\1', $leftCell);
@@ -227,12 +244,38 @@ class MensaFood
                     'categoryNumber' => $categoryNumber,
                     'name' => $foodName
                 );
+            } elseif ($action == 'selfservice') {
+                // Self-Service
+                // food name
+                $foodName = trim(
+                    preg_replace("/\s+/", ' ',
+                        str_replace("\n", ' ', $rightCell)
+                    )
+                );
+                $food[] = array(
+                    'category' => self::CATEGORY_SELFSERVICE,
+                    'categoryNumber' => null,
+                    'name' => $foodName
+                );
+            } elseif ($action == 'dessert') {
+                // Dessert
+                // food name
+                $foodName = trim(
+                    preg_replace("/\s+/", ' ',
+                        str_replace("\n", ' ', $rightCell)
+                    )
+                );
+                $food[] = array(
+                    'category' => self::CATEGORY_DESSERT,
+                    'categoryNumber' => null,
+                    'name' => $foodName
+                );
             }
         }
 
         $this->sides = $sides;
         $this->food = $food;
-        
+
         return (count($this->food) != 0);
     }
 

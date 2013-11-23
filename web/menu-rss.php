@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2008-2009  Philipp Wagner <mail@philipp-wagner.com>
+ * Copyright 2008-2013  Philipp Wagner <mail@philipp-wagner.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 define('CACHE_DIR', dirname(__FILE__).'/cache');
 define('CACHE_TIMEOUT', 24*60*60); // cache timeout in seconds (24h)
 define('DEBUG', false);
@@ -43,7 +43,9 @@ setlocale(LC_ALL, 'de_DE');
 $categoryNames = array(
     MensaFood::CATEGORY_NORMAL => 'Tagesgericht',
     MensaFood::CATEGORY_ORGANIC => 'Biogericht',
-    MensaFood::CATEGORY_SPECIAL => 'Aktionsessen');
+    MensaFood::CATEGORY_SPECIAL => 'Aktionsessen',
+    MensaFood::CATEGORY_SELFSERVICE => 'Self-Service',
+    MensaFood::CATEGORY_DESSERT => 'Dessert');
 
 // input validation
 $idExists = false;
@@ -92,16 +94,26 @@ for ($i=0; $i<=14; $i++) {
     $rss .= '<guid isPermaLink="false">'.uniqid('mensafood').'</guid>';
     $rss .= '<link>'.$mensafood->getOfficialUrl().'</link>';
     $rss .= '<description>';
-  
+
     $desc = '';
     foreach ($mensafood->getFood() as $foodItem) {
-        $desc .= '<b>'.$categoryNames[$foodItem['category']].' '.
-                $foodItem['categoryNumber'].'</b> '.
-                '('.number_format($prices[$foodItem['category']][$foodItem['categoryNumber']], 2, ',', '.').' EUR): '.
-                $foodItem['name'].'<br>';
+        $desc .= '<b>';
+
+        $desc .= $categoryNames[$foodItem['category']];
+        if ($foodItem['categoryNumber'] !== null) {
+            $desc .= ' '.$foodItem['categoryNumber'];
+        }
+        $desc .= '</b>';
+        if (!empty($prices[$foodItem['category']]) && !empty($prices[$foodItem['category']][$foodItem['categoryNumber']])) {
+            $desc .= '('.number_format($prices[$foodItem['category']][$foodItem['categoryNumber']], 2, ',', '.').' EUR)';
+        }
+        $desc .= ': '.$foodItem['name'].'<br>';
     }
     $desc .= '<br>';
-    $desc .= '<b>Beilagen:</b> '.implode(', ', $mensafood->getSides());
+    $sides = $mensafood->getSides();
+    if (!empty($sides)) {
+        $desc .= '<b>Beilagen:</b> '.implode(', ', $mensafood->getSides());
+    }
 
     $rss .= htmlspecialchars($desc);
     $rss .= '</description></item>';
@@ -109,7 +121,9 @@ for ($i=0; $i<=14; $i++) {
 
 $mensafood->fetchFood();
 $rss .= '</channel></rss>';
-file_put_contents($cacheFile, $rss);
+if (!DEBUG) {
+    file_put_contents($cacheFile, $rss);
+}
 
 header('Content-Type: application/rss+xml');
 echo $rss;
