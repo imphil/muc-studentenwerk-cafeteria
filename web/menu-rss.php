@@ -105,7 +105,7 @@ for ($i=0; $i<=14; $i++) {
         }
         $desc .= '</b>';
         if (!empty($prices[$foodItem['category']]) && !empty($prices[$foodItem['category']][$foodItem['categoryNumber']])) {
-            $desc .= '('.number_format($prices[$foodItem['category']][$foodItem['categoryNumber']], 2, ',', '.').' EUR)';
+            $desc .= ' ('.number_format($prices[$foodItem['category']][$foodItem['categoryNumber']], 2, ',', '.').' EUR)';
         }
         $desc .= ': '.$foodItem['name'].'<br>';
     }
