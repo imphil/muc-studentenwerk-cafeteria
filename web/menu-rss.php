@@ -39,13 +39,7 @@ if (!DEBUG && file_exists($cacheFile) && filemtime($cacheFile) > time()-CACHE_TI
 require_once 'mensafood.php';
 include 'mensen.inc.php';
 
-setlocale(LC_ALL, 'de_DE');
-$categoryNames = array(
-    MensaFood::CATEGORY_NORMAL => 'Tagesgericht',
-    MensaFood::CATEGORY_ORGANIC => 'Biogericht',
-    MensaFood::CATEGORY_SPECIAL => 'Aktionsessen',
-    MensaFood::CATEGORY_SELFSERVICE => 'Self-Service',
-    MensaFood::CATEGORY_DESSERT => 'Dessert');
+setlocale(LC_NUMERIC, 'C');
 
 // input validation
 $idExists = false;
@@ -98,10 +92,13 @@ for ($i=0; $i<=14; $i++) {
     $desc = '';
     foreach ($mensafood->getFood() as $foodItem) {
         $desc .= '<b>';
-
-        $desc .= $categoryNames[$foodItem['category']];
-        if ($foodItem['categoryNumber'] !== null) {
-            $desc .= ' '.$foodItem['categoryNumber'];
+        if ($foodItem['category'] == MensaFood::CATEGORY_OTHER) {
+            $desc .= $foodItem['categoryOrigName'];
+        } else {
+            $desc .= $mensafood->getCategoryName($foodItem['category']);
+            if ($foodItem['categoryNumber'] !== null) {
+                $desc .= ' '.$foodItem['categoryNumber'];
+            }
         }
         $desc .= '</b>';
         if (!empty($prices[$foodItem['category']]) && !empty($prices[$foodItem['category']][$foodItem['categoryNumber']])) {
@@ -125,6 +122,7 @@ if (!DEBUG) {
     file_put_contents($cacheFile, $rss);
 }
 
-header('Content-Type: application/rss+xml');
+header("Content-Type: application/rss+xml; charset=utf-8");
+
 echo $rss;
 ?>

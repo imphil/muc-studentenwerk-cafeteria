@@ -36,6 +36,7 @@ class MensaFood
     const CATEGORY_SPECIAL = 3; // Aktionsessen
     const CATEGORY_SELFSERVICE = 4; // Self-Service
     const CATEGORY_DESSERT = 5; // Dessert
+    const CATEGORY_OTHER = 6; // anderes (catch-all)
 
     private $date;
     private $prices = null;
@@ -68,6 +69,28 @@ class MensaFood
 
         include 'mensen.inc.php';
         $this->locations = $mensen;
+    }
+
+    /**
+     * Get the name of a category code
+     */
+    public function getCategoryName($category)
+    {
+        switch ($category) {
+            case self::CATEGORY_NORMAL:
+                return 'Tagesgericht';
+            case self::CATEGORY_ORGANIC:
+                return 'Biogericht';
+            case self::CATEGORY_SPECIAL:
+                return 'Aktionsessen';
+            case self::CATEGORY_SELFSERVICE:
+                return 'Self-Service';
+            case self::CATEGORY_DESSERT:
+                return 'Dessert';
+            case self::CATEGORY_OTHER:
+            default:
+                return '';
+        }
     }
 
     /**
@@ -193,14 +216,18 @@ class MensaFood
         $food = array();
         $sides = array();
         $action = 'dishes';
-        $prevAction = 'dishes';
+        // sometimes the category is not repeated in consecutive lines
+        $prevLeftCell = '';
         foreach ($entries as $entry) {
             $leftCell = trim($xpath->query("td[1]", $entry)->item(0)->nodeValue);
             $rightCell = $xpath->query("td[@class='beschreibung']/span[1]", $entry)->item(0)->nodeValue;
 
             if (empty($leftCell)) {
-                $action = $prevAction;
-            } elseif (preg_match('/^(Beilagen|Aktion|Bio)$/', $leftCell)) {
+                $leftCell = $prevLeftCell;
+            }
+            $prevLeftCell = $leftCell;
+
+            if (preg_match('/^(Beilagen|Aktion|Bio)$/', $leftCell)) {
                 $action = 'sides';
             } elseif (preg_match('/^Self-Service$/', $leftCell)) {
                 $action = 'selfservice';
@@ -221,18 +248,32 @@ class MensaFood
                 $sides[] = $sideDish;
             } elseif ($action == 'dishes') {
                 // Dishes
+                // category name as given in the source document
+                $categoryOrigName = trim(
+                    preg_replace("/\s+/", ' ',
+                        str_replace("\n", ' ', $leftCell)
+                    )
+                );
+
                 // category
-                if (strpos($leftCell, 'Tagesgericht') === 0) {
+                if (strpos($categoryOrigName, 'Tagesgericht') === 0) {
                     $category = self::CATEGORY_NORMAL;
-                } elseif (strpos($leftCell, 'Biogericht') === 0) {
+                } elseif (strpos($categoryOrigName, 'Biogericht') === 0) {
                     $category = self::CATEGORY_ORGANIC;
-                } elseif (strpos($leftCell, 'Aktionsessen') === 0) {
+                } elseif (strpos($categoryOrigName, 'Aktionsessen') === 0) {
                     $category = self::CATEGORY_SPECIAL;
                 } else {
-                    throw new Exception("Unknown category '$leftCell'");
+                    $category = self::CATEGORY_OTHER;
                 }
+
                 // number
-                $categoryNumber = preg_replace('/^\w+(?:gericht|essen)\s+(\d).*$/sm', '\1', $leftCell);
+                $categoryNumber = null;
+                if ($category == self::CATEGORY_NORMAL ||
+                    $category == self::CATEGORY_ORGANIC ||
+                    $category == self::CATEGORY_SPECIAL) {
+                    $categoryNumber = preg_replace('/^\w+(?:gericht|essen)\s+(\d).*$/sm', '\1', $categoryOrigName);
+                }
+
                 // food name
                 $foodName = trim(
                     preg_replace("/\s+/", ' ',
@@ -241,6 +282,7 @@ class MensaFood
                 );
                 $food[] = array(
                     'category' => $category,
+                    'categoryOrigName' => $categoryOrigName,
                     'categoryNumber' => $categoryNumber,
                     'name' => $foodName
                 );

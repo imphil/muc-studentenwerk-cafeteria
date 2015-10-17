@@ -24,12 +24,7 @@ define('DEBUG', false);
 require_once 'mensafood.php';
 
 // make sure that we get the right output formatting for floats
-setlocale(LC_ALL, 'C');
-
-$categoryNames = array(
-    MensaFood::CATEGORY_NORMAL => 'Tagesgericht',
-    MensaFood::CATEGORY_ORGANIC => 'Biogericht',
-    MensaFood::CATEGORY_SPECIAL => 'Aktionsessen');
+setlocale(LC_NUMERIC, 'C');
 
 // get input parameters: action
 if (empty($_REQUEST['action']) ||
@@ -86,10 +81,20 @@ if ($action === 'get_menu') {
         $dishes = $mensafood->getFood();
         // dishes
         foreach ($dishes as $foodItem) {
+            if (!isset($prices[$foodItem['category']][$foodItem['categoryNumber']])) {
+                $price = '';
+            } else {
+                $price = $prices[$foodItem['category']][$foodItem['categoryNumber']];
+            }
+            if ($foodItem['category'] == MensaFood::CATEGORY_OTHER) {
+                $categoryName = $foodItem['categoryOrigName'];
+            } else {
+                $categoryName = $mensafood->getCategoryName($foodItem['category']).' '.$foodItem['categoryNumber'];
+            }
             $xml .= '<item>';
-            $xml .= '<name>'.$categoryNames[$foodItem['category']].' '.$foodItem['categoryNumber'].'</name>';
+            $xml .= '<name>'.$categoryName.'</name>';
             $xml .= '<value>'.$foodItem['name'].'</value>';
-            $xml .= '<price>'.$prices[$foodItem['category']][$foodItem['categoryNumber']].'</price>';
+            $xml .= '<price>'.$price.'</price>';
             $xml .= "</item>\n";
         }
 
